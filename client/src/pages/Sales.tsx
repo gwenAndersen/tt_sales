@@ -7,6 +7,13 @@ import { useSalesItems } from "@/hooks/use-sales-items";
 import { type InsertSalesItem, type SalesItem } from "@shared/schema"; // Added SalesItem type
 import { useToast } from "@/hooks/use-toast";
 
+// Define the global function type
+declare global {
+  interface Window {
+    updateBackendStatus: (isRunning: boolean) => void;
+  }
+}
+
 export default function Sales() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSelectionMode, setIsSelectionMode] = useState(false); // New state for selection mode
@@ -14,9 +21,25 @@ export default function Sales() {
   const { createSalesItem, salesItems } = useSalesItems();
   const mainRef = useRef<HTMLElement>(null);
   const { toast } = useToast();
+  const [isBackendRunning, setIsBackendRunning] = useState(false);
 
-  const handleCreateSalesItem = (item: InsertSalesItem) => {
-    createSalesItem(item);
+  useEffect(() => {
+    window.updateBackendStatus = (isRunning: boolean) => {
+      setIsBackendRunning(isRunning);
+    };
+
+    return () => {
+      delete window.updateBackendStatus;
+    };
+  }, []);
+
+  const handleCreateSalesItem = (item: InsertSalesItem | (Partial<SalesItem> & { id: string })) => {
+    if ("id" in item) {
+      // This case should not happen when modal is opened from "Add Sales Item" button
+      console.warn("Attempted to update item from 'Add Sales Item' modal.");
+    } else {
+      createSalesItem(item);
+    }
   };
 
   // Scroll to bottom when salesItems change or on initial load
@@ -44,7 +67,12 @@ export default function Sales() {
     <div className="min-h-screen bg-background flex flex-col">
       <header className="sticky top-0 z-40 w-full border-b bg-background">
         <div className="container flex h-16 items-center justify-between py-4">
-          <h1 className="text-xl font-semibold">Sales Items</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-xl font-semibold">Sales Items</h1>
+            <span className={`text-xs px-2 py-1 rounded-full ${isBackendRunning ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+              Backend: {isBackendRunning ? 'Running' : 'Stopped'}
+            </span>
+          </div>
           <div className="flex gap-2">
             {isSelectionMode && (
               <Button variant="outline" onClick={handleCopySelected} disabled={selectedItems.length === 0}>
@@ -71,10 +99,7 @@ export default function Sales() {
         </Button>
       </main>
 
-      <SalesItemModal open={isModalOpen} onOpenChange={(open) => {
-        setIsModalOpen(open);
-        if (!open) setEditingItem(undefined); // Clear editing item when modal closes
-      }} onSubmit={handleCreateSalesItem} />
+      <SalesItemModal open={isModalOpen} onOpenChange={setIsModalOpen} onSubmit={handleCreateSalesItem} />
     </div>
   );
 }

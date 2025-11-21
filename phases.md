@@ -2,25 +2,26 @@
 
 ## Phase 1: Project Setup & Dependency Installation
 - [x] Clone the repository.
-- [ ] Create a `phases.md` file.
-- [ ] Install dependencies using npm.
+- [x] Create a `phases.md` file.
+- [x] Install dependencies using npm.
 
 ## Phase 2: Backend Setup & Database Connection
-- [ ] Configure the database connection using Drizzle.
-- [ ] Define the database schema.
-- [ ] Implement the core backend logic and API endpoints.
+- [x] Configure the database connection using Drizzle.
+- [x] Define the database schema (users, business_metrics, sales_items).
+- [x] Implement core backend logic and API endpoints (users, business_metrics, sales_items CRUD).
 
 ## Phase 3: Frontend Setup & API Integration
-- [ ] Configure the frontend development environment.
-- [ ] Implement the user interface based on the design guidelines.
-- [ ] Connect the frontend to the backend API.
+- [x] Configure the frontend development environment.
+- [x] Implement the user interface for Dashboard and Sales pages.
+- [x] Connect the frontend to the backend API (business_metrics, sales_items CRUD).
 
 ## Phase 4: Core Feature Implementation
-- [ ] Implement user authentication.
-- [ ] Implement the main sales tracking features.
-- [ ] Implement reporting and analytics.
+- [x] Implement user authentication.
+- [x] Implement the main sales tracking features (Sales Items list, add/edit/delete, parsing).
+- [x] Implement reporting and analytics (charts for business metrics).
 
 ## Phase 5: Testing & Deployment
-- [ ] Write unit and integration tests for the backend and frontend.
+- [x] Write unit and integration tests for the backend.
+- [ ] Write unit and integration tests for the frontend.
 - [ ] Set up a deployment pipeline.
-- [ ] Deploy the application to a hosting provider.
+- [ ] Deploy the application to a hosting provider (e.g., Render).

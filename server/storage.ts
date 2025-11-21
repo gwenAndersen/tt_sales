@@ -1,8 +1,12 @@
-import { type User, type InsertUser, type BusinessMetric, type InsertBusinessMetric, type SalesItem, type InsertSalesItem } from "@shared/schema";
+import { type User, type InsertUser, type BusinessMetric, type InsertBusinessMetric, type SalesItem, type InsertSalesItem, users, businessMetrics, salesItems } from "@shared/schema";
 import { randomUUID } from "crypto";
+import bcrypt from "bcryptjs";
+import { drizzle } from "drizzle-orm/neon-http";
+import { neon } from "@neondatabase/serverless";
+import { eq } from "drizzle-orm";
 
-// modify the interface with any CRUD methods
-// you might need
+const sql = neon(process.env.DATABASE_URL!);
+export const db = drizzle(sql, { schema: { users, businessMetrics, salesItems } });
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -13,98 +17,76 @@ export interface IStorage {
   getSalesItems(): Promise<SalesItem[]>;
   createSalesItem(item: InsertSalesItem): Promise<SalesItem>;
   updateSalesItem(id: string, updates: Partial<SalesItem>): Promise<SalesItem | undefined>;
-  deleteSalesItem(id: string): Promise<boolean>; // New method
+  deleteSalesItem(id: string): Promise<boolean>;
+  findUserByUsername(username: string): Promise<User | undefined>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-  private businessMetrics: Map<string, BusinessMetric>;
-  private salesItems: Map<string, SalesItem>;
-
-  constructor() {
-    this.users = new Map();
-    this.businessMetrics = new Map();
-    this.salesItems = new Map();
-  }
-
+export class DrizzleStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, id),
+    });
     return user;
   }
 
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return this.findUserByUsername(username);
+  }
+
+  async findUserByUsername(username: string): Promise<User | undefined> {
+    const user = await db.query.users.findFirst({
+      where: eq(users.username, username),
+    });
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [newUser] = await db.insert(users).values(insertUser).returning();
+    return newUser;
+  }
+
   async getBusinessMetrics(): Promise<BusinessMetric[]> {
-    return Array.from(this.businessMetrics.values());
+    const metrics = await db.query.businessMetrics.findMany();
+    return metrics;
   }
 
   async createBusinessMetric(metric: InsertBusinessMetric): Promise<BusinessMetric> {
-    const id = randomUUID();
-    const newMetric: BusinessMetric = { 
-      ...metric, 
-      id, 
-      date: new Date().toISOString(),
+    const [newMetric] = await db.insert(businessMetrics).values({
+      ...metric,
+      date: metric.date ? new Date(metric.date) : new Date(),
       revenue: String(metric.revenue),
       sales: String(metric.sales),
       expenses: metric.expenses ? String(metric.expenses) : null,
       profit: metric.profit ? String(metric.profit) : null,
       notes: metric.notes || null,
-    };
-    this.businessMetrics.set(id, newMetric);
+    }).returning();
     return newMetric;
   }
 
   async getSalesItems(): Promise<SalesItem[]> {
-    const items = Array.from(this.salesItems.values());
-    return items.sort((a, b) => {
-      // Pending items always come first
-      if (a.state === "pending" && b.state !== "pending") {
-        return -1;
-      }
-      if (a.state !== "pending" && b.state === "pending") {
-        return 1;
-      }
-      // For non-pending items, sort by createdAt in ascending order (oldest first)
-      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-    });
+    const items = await db.query.salesItems.findMany();
+    return items;
   }
 
   async createSalesItem(item: InsertSalesItem): Promise<SalesItem> {
-    const id = randomUUID();
-    const newItem: SalesItem = {
+    const [newItem] = await db.insert(salesItems).values({
       ...item,
-      id,
-      createdAt: new Date().toISOString(),
+      createdAt: new Date(),
       quantity: String(item.quantity),
       state: item.state || "pending",
-    };
-    this.salesItems.set(id, newItem);
+    }).returning();
     return newItem;
   }
 
   async updateSalesItem(id: string, updates: Partial<SalesItem>): Promise<SalesItem | undefined> {
-    const existingItem = this.salesItems.get(id);
-    if (!existingItem) {
-      return undefined;
-    }
-    const updatedItem = { ...existingItem, ...updates };
-    this.salesItems.set(id, updatedItem);
+    const [updatedItem] = await db.update(salesItems).set(updates).where(eq(salesItems.id, id)).returning();
     return updatedItem;
   }
 
   async deleteSalesItem(id: string): Promise<boolean> {
-    return this.salesItems.delete(id);
+    const [deletedItem] = await db.delete(salesItems).where(eq(salesItems.id, id)).returning();
+    return !!deletedItem;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DrizzleStorage();

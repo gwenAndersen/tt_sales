@@ -17,6 +17,7 @@ import {
 import { useBusinessMetrics } from "@/hooks/use-business-metrics";
 import { type InsertBusinessMetric } from "@shared/schema";
 import { Link } from "wouter"; // New import
+import BusinessMetricsChart from "@/components/BusinessMetricsChart"; // New import
 
 export default function Dashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -31,25 +32,25 @@ export default function Dashboard() {
 
   const displayMetrics = [
     {
-      title: "Total Revenue",
-      value: `$${totalRevenue.toLocaleString()}`,
-      icon: <DollarSign className="w-6 h-6" />,
-    },
-    {
-      title: "Profit",
-      value: `$${totalProfit.toLocaleString()}`,
-      icon: <TrendingUp className="w-6 h-6" />,
-    },
-    {
-      title: "Expenses",
-      value: `$${totalExpenses.toLocaleString()}`,
-      icon: <Wallet className="w-6 h-6" />,
-    },
-    {
       title: "Sales Items",
       value: "View All",
       icon: <ListOrdered className="w-6 h-6" />,
       link: "/sales", // Link to the new sales page
+    },
+    {
+      title: "Total Revenue",
+      value: `${totalRevenue.toLocaleString()}`,
+      icon: <DollarSign className="w-6 h-6" />,
+    },
+    {
+      title: "Profit",
+      value: `${totalProfit.toLocaleString()}`,
+      icon: <TrendingUp className="w-6 h-6" />,
+    },
+    {
+      title: "Expenses",
+      value: `${totalExpenses.toLocaleString()}`,
+      icon: <Wallet className="w-6 h-6" />,
     },
   ];
 
@@ -119,19 +120,7 @@ export default function Dashboard() {
                     </Select>
                   }
                 >
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center space-y-4">
-                      <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
-                        <TrendingUp className="w-8 h-8 text-primary" />
-                      </div>
-                      <div className="space-y-2">
-                        <p className="font-medium text-muted-foreground">Chart Visualization</p>
-                        <p className="text-sm text-muted-foreground max-w-sm">
-                          Revenue trend visualization will be displayed here once connected to your data source
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                  <BusinessMetricsChart />
                 </ChartCard>
 
                 <ChartCard title="Sales Performance">

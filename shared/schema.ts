@@ -6,7 +6,7 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  hashedPassword: text("hashed_password").notNull(), // Changed from password to hashedPassword
 });
 
 export const businessMetrics = pgTable("business_metrics", {
@@ -21,7 +21,7 @@ export const businessMetrics = pgTable("business_metrics", {
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
-  password: true,
+  hashedPassword: true, // Changed from password to hashedPassword
 });
 
 export const insertBusinessMetricSchema = createInsertSchema(businessMetrics).omit({
@@ -37,6 +37,7 @@ export const insertBusinessMetricSchema = createInsertSchema(businessMetrics).om
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+export type PublicUser = Omit<User, "hashedPassword">;
 export type BusinessMetric = typeof businessMetrics.$inferSelect;
 export type InsertBusinessMetric = z.infer<typeof insertBusinessMetricSchema>;
 

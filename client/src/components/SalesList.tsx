@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2, Copy } from "lucide-react";
 import SalesItemModal from "@/components/SalesItemModal";
-import { type SalesItem } from "@shared/schema";
+import { type SalesItem, type InsertSalesItem } from "@shared/schema";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 
@@ -51,7 +51,7 @@ export default function SalesList({ isSelectionMode, onSelectionChange }: SalesL
     toast({ title: "Copied to clipboard", description: "Item details copied." });
   };
 
-  const handleModalSubmit = (item: Partial<SalesItem> & { id: string } | Omit<SalesItem, "id" | "createdAt">) => {
+  const handleModalSubmit = (item: InsertSalesItem | (Partial<SalesItem> & { id: string })) => {
     if ("id" in item) {
       // It's an update
       updateSalesItem(item);
@@ -121,7 +121,7 @@ export default function SalesList({ isSelectionMode, onSelectionChange }: SalesL
           <CardContent>
             <div className="text-2xl font-bold">Coin: {item.quantity && !isNaN(parseInt(item.quantity)) ? parseInt(item.quantity) * 100 : item.quantity}</div>
             <p className="text-xs text-muted-foreground">
-              Link: <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{item.link}</a>
+              Link: {item.link ? <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{item.link}</a> : "N/A"}
             </p>
             <p className="text-xs text-muted-foreground">
               Added: {format(new Date(item.createdAt), "PPP p")}

@@ -103,7 +103,7 @@ export default function SalesItemModal({ open, onOpenChange, onSubmit, initialDa
         id: initialData.id,
         link: formData.link,
         name: formData.name,
-        quantity: String(parseInt(finalQuantity, 10)),
+        quantity: finalQuantity, // Keep as string
         state: formData.state as "pending" | "done",
       };
       onSubmit(updatedItem);
@@ -111,7 +111,7 @@ export default function SalesItemModal({ open, onOpenChange, onSubmit, initialDa
       // Creating new item
       const newItem: InsertSalesItem = {
         ...formData,
-        quantity: parseInt(finalQuantity, 10),
+        quantity: finalQuantity, // Keep as string
       };
       onSubmit(newItem);
     }
