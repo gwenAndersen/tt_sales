@@ -1,59 +1,66 @@
-import { sql } from "drizzle-orm";
+import { sql, relations } from "drizzle-orm";
 import { pgTable, text, varchar, numeric, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// --- Users Table ---
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
-  hashedPassword: text("hashed_password").notNull(), // Changed from password to hashedPassword
+  hashedPassword: text("hashed_password").notNull(),
 });
 
-export const businessMetrics = pgTable("business_metrics", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  date: timestamp("date").notNull().defaultNow(),
-  revenue: numeric("revenue", { precision: 10, scale: 2 }).notNull(),
-  sales: numeric("sales", { precision: 10, scale: 0 }).notNull(),
-  expenses: numeric("expenses", { precision: 10, scale: 2 }),
-  profit: numeric("profit", { precision: 10, scale: 2 }),
-  notes: text("notes"),
-});
-
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  hashedPassword: true, // Changed from password to hashedPassword
-});
-
-export const insertBusinessMetricSchema = createInsertSchema(businessMetrics).omit({
-  id: true,
-}).extend({
-  date: z.string().optional(),
-  revenue: z.string().or(z.number()),
-  sales: z.string().or(z.number()),
-  expenses: z.string().or(z.number()).optional(),
-  profit: z.string().or(z.number()).optional(),
-  notes: z.string().optional(),
-});
-
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
-export type PublicUser = Omit<User, "hashedPassword">;
-export type BusinessMetric = typeof businessMetrics.$inferSelect;
-export type InsertBusinessMetric = z.infer<typeof insertBusinessMetricSchema>;
-
-export const salesItems = pgTable("sales_items", {
+// --- Sales Table ---
+export const sales = pgTable("sales", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   link: text("link"),
-  name: text("name").notNull(),
-  quantity: numeric("quantity", { precision: 10, scale: 0 }).notNull(),
-  state: text("state").notNull().default("pending"), // "pending" or "done"
+  state: text("state").notNull().default("pending"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const insertSalesItemSchema = createInsertSchema(salesItems).omit({
-  id: true,
-  createdAt: true,
+// --- Transactions Table ---
+export const transactions = pgTable("transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  date: timestamp("date").notNull().defaultNow(),
+  description: text("description").notNull(),
+  category: text("category").notNull(),
+  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+  saleId: varchar("sale_id").references(() => sales.id, { onDelete: 'cascade' }), // Foreign key placeholder
 });
 
-export type SalesItem = typeof salesItems.$inferSelect;
-export type InsertSalesItem = z.infer<typeof insertSalesItemSchema>;
+// --- RELATIONS ---
+export const salesRelations = relations(sales, ({ many }) => ({
+  transactions: many(transactions),
+}));
+
+export const transactionsRelations = relations(transactions, ({ one }) => ({
+  sale: one(sales, {
+    fields: [transactions.saleId],
+    references: [sales.id],
+  }),
+}));
+
+
+// --- Zod Schemas and Types ---
+export const insertUserSchema = createInsertSchema(users).pick({
+  username: true,
+  hashedPassword: true,
+});
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect;
+export type PublicUser = Omit<User, "hashedPassword">;
+
+export type Sale = typeof sales.$inferSelect;
+
+export const insertTransactionSchema = createInsertSchema(transactions, {
+  amount: z.coerce.number(),
+}).omit({
+  id: true,
+  date: true,
+});
+export type Transaction = typeof transactions.$inferSelect;
+export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
+
+export type TransactionWithSaleDetails = Transaction & {
+  sale: Sale | null;
+};

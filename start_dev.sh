@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Get the directory of the script
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+cd "$SCRIPT_DIR"
+
 export DATABASE_URL='postgresql://neondb_owner:npg_ROGu0KFkq3Lt@ep-autumn-forest-a1dipbxy-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
 
 echo "Starting development servers with DATABASE_URL set..."
